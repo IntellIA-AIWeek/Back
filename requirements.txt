@@ -20,3 +20,5 @@ huggingface_hub
 numpy
 torch
 scikit-learn
+langchain_aws
+boto3
