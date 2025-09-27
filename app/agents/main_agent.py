@@ -2,6 +2,10 @@ import os
 # from datetime import datetime
 # from typing import Dict, Any, List, Optional, Tuple, Annotated
 
+AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+AWS_DEFAULT_REGION = os.getenv("AWS_DEFAULT_REGION")
+
 from dotenv import load_dotenv
 # from langchain.chat_models import init_chat_model
 # from langchain_core.messages import HumanMessage, ToolMessage
