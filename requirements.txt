@@ -1,0 +1,13 @@
+langchain_core
+langgraph
+langchain
+langgraph
+langchain_google_genai
+langchain_openai
+dotenv
+IPython
+markdownify==1.2.0
+tavily-python
+rich
+fastapi
+uvicorn
