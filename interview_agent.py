@@ -259,6 +259,7 @@ for qid in qid_order:
     })
     print("Usuario:", user_answer)
     print("Agente:", last_tool_message_text(state["messages"]))
+    print("Estado QA:", state["qa"])
 
     # Si terminó, rompe
     if state["qa"].get("done"):
