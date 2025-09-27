@@ -52,7 +52,5 @@ class DeepAgentState(AgentState):
     - todos: List of Todo items for task planning and progress tracking
     """
 
-    todos: NotRequired[list[Todo]]
-    instructions: NotRequired[str]
     messages : NotRequired[list[AIMessage | HumanMessage | SystemMessage]]
     
