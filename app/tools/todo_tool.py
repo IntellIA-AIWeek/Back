@@ -15,7 +15,6 @@ from langgraph.types import Command
 from app.utils.prompts import WRITE_TODOS_DESCRIPTION
 from app.utils.state import DeepAgentState, Todo
 
-
 @tool(description=WRITE_TODOS_DESCRIPTION,parse_docstring=True)
 def write_todos(
     todos: list[Todo], tool_call_id: Annotated[str, InjectedToolCallId]
@@ -24,7 +23,7 @@ def write_todos(
 
     Args:
         todos: List of Todo items with content and status
-        tool_call_id: Tool call identifier for message response
+        tool_call_id: Tool call identifier for message response.
 
     Returns:
         Command to update agent state with new TODO list

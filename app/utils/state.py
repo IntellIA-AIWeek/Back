@@ -6,11 +6,11 @@ This module defines the extended agent state structure that supports:
 - Efficient state merging with reducer functions
 """
 
-from typing import Annotated, Literal, NotRequired
+from typing import Literal, NotRequired
 from typing_extensions import TypedDict
 
 from langgraph.prebuilt.chat_agent_executor import AgentState
-
+from langchain.schema import AIMessage, HumanMessage, SystemMessage
 
 class Todo(TypedDict):
     """A structured task item for tracking progress through complex workflows.
@@ -50,8 +50,9 @@ class DeepAgentState(AgentState):
 
     Inherits from LangGraph's AgentState and adds:
     - todos: List of Todo items for task planning and progress tracking
-    - files: Virtual file system stored as dict mapping filenames to content
     """
 
     todos: NotRequired[list[Todo]]
-    files: Annotated[NotRequired[dict[str, str]], file_reducer]
+    instructions: NotRequired[str]
+    messages : NotRequired[list[AIMessage | HumanMessage | SystemMessage]]
+    
