@@ -11,3 +11,12 @@ tavily-python
 rich
 fastapi
 uvicorn
+httpx
+uvicorn
+openai 
+transformers 
+joblib 
+huggingface_hub 
+numpy
+torch
+scikit-learn

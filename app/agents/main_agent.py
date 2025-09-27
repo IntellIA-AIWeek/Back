@@ -1,6 +1,7 @@
 import os
 from datetime import datetime
 from typing import Dict, Any, List, Optional, Tuple, Annotated
+import httpx
 
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
@@ -10,10 +11,12 @@ from langgraph.prebuilt import create_react_agent, InjectedState
 from langgraph.types import Command
 from langgraph.prebuilt.chat_agent_executor import AgentState
 from typing_extensions import TypedDict
+import asyncio
+
 
 # --- 1. CONFIGURACIÓN INICIAL ---
 load_dotenv(os.path.join("..", ".env"), override=True)
-os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY") or "AIzaSyAPDNhsimSdZEb5A8hs9HVC7MhUXfBzkig"
+os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY") or "AIzaSyBvvjUOtiDdPMqm6MbFXPaZOxJxAVRGC0o"
 
 # --- 2. DEFINICIÓN DE ESTADO ---
 class QAState(TypedDict):
@@ -37,12 +40,12 @@ ANAMNESIS_QUESTIONS: List[Tuple[str, str]] = [
     ("irradiacion", "¿El dolor/sensación se irradia a otra zona? ¿A cuál?"),
     ("factores_agravantes", "¿Qué cosas lo empeoran? (ejercicio, posturas, alimentos, estrés, etc.)"),
     ("factores_aliviantes", "¿Qué cosas lo mejoran? (reposo, fármacos, compresas, etc.)"),
-    ("sintomas_asociados", "¿Tienes otros síntomas acompañantes (fiebre, náuseas, tos, etc.)?"),
     ("antecedentes", "¿Antecedentes médicos relevantes (hipertensión, diabetes, cirugías, etc.)?"),
     ("medicamentos", "¿Estás tomando medicamentos actualmente?"),
     ("alergias", "¿Tienes alergias a medicamentos o alimentos?"),
     ("habitos", "¿Fumas, consumes alcohol u otras sustancias?"),
     ("red_flags", "¿Has tenido desmayos, dolor torácico intenso o dificultad para respirar?"),
+    ("sintomas_asociados", "¿Tienes otros síntomas acompañantes (fiebre, náuseas, tos, etc.)?"),
 ]
 
 # --- 4. FUNCIONES AUXILIARES ---
@@ -237,8 +240,15 @@ Hoy es {datetime.now().strftime('%Y-%m-%d')}.
 Si el usuario indica que tiene una pregunta o problema médico, DEBES seguir estos pasos estrictamente:
 
 1.  **Solicitar Consentimiento**: Responde ÚNICAMENTE con:
-    "Para poder ayudarte, necesito hacerte algunas preguntas sobre tus síntomas.
-     Esta conversación no reemplaza un diagnóstico médico profesional. ¿Aceptas continuar?"
+    "Antes de continuar, necesito su consentimiento.
+    Declaro que comprendo que este agente conversacional tiene fines informativos y
+    educativos, no sustituye la atención médica profesional, y que los resultados son
+    estimaciones probabilísticas sujetas a error. La información que proporcione se usará solo
+    durante esta sesión con fines de demostración y no se almacenará de forma permanente ni
+    se compartirá con terceros. En caso de presentar síntomas de urgencia, debo buscar
+    atención inmediata.
+    Si está de acuerdo en continuar bajo estas condiciones, responda: “Acepto”.
+    Si no está de acuerdo, responda: “No acepto” y finalizaré la conversación."
 
 2.  **Evaluar Respuesta**: Una vez que el usuario responda, usa la herramienta `eval_consent`.
 
@@ -295,11 +305,37 @@ if __name__ == "__main__":
             print("--- ENTREVISTA FINALIZADA: RESUMEN Y EXTRACCIÓN DE SÍNTOMAS ---\n")
             # Un turno adicional para que el agente, siguiendo el protocolo, invoque summarize_interview y symptoms_from_state
             current_state = run_turn(agent, current_state)
-            break
+            anamnesis = current_state["qa"]["anamnesis"]
+            symptoms = current_state["qa"]["symptoms"]
+            print(f"Síntomas detectados: {symptoms}")
+            print(f"Anamnesis: {anamnesis}")
+            anamnesis.pop("sintomas_asociados")
+            anamnesis["symptoms_present"] = symptoms
 
-    # --- VERIFICACIÓN FINAL ---
-    print("="*50)
-    print("✅ VERIFICACIÓN DEL ESTADO FINAL GUARDADO")
-    print("="*50)
-    import json
-    print(json.dumps(current_state.get("qa", {}), indent=2, ensure_ascii=False))
+            
+            async def call_generate_recommendation(data):
+                url = "http://localhost:8000/generate-recommendation/"
+                async with httpx.AsyncClient() as client:
+                    response = await client.post(url, json=data)
+                    if response.status_code == 200:
+                        recommendation = response.json()
+                        print(f"Recomendación generada: {recommendation['recommendation']}")
+                    else:
+                        print(f"Error al obtener la recomendación: {response.status_code}")
+
+            asyncio.run(call_generate_recommendation(anamnesis))
+
+            async def call_predict_probabilities(data):
+                url = "http://localhost:8000/predict-probabilities/"
+                async with httpx.AsyncClient() as client:
+                    response = await client.post(url, json=data)
+                    if response.status_code == 200:
+                        recommendation = response.json()
+                        print(f"Recomendación generada: {recommendation['recommendation']}")
+                    else:
+                        print(f"Error al obtener la recomendación: {response.status_code}")
+
+            asyncio.run(call_predict_probabilities(symptoms))
+
+            
+
